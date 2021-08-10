@@ -10,8 +10,54 @@ export const getTodosAsync = createAsyncThunk(
             return { todos }
         }
     }
-    
-    );
+);
+
+export const addTodoAsync = createAsyncThunk(
+    'todos/addTodoAsync',
+    async (payload) => {
+        const response = await fetch('http://localhost:7000/todos',{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({title: payload.title})
+        });
+        if(response.ok) {
+            const todo = await response.json();
+            return { todo }
+        }
+    }
+);
+
+export const toogleCompleteAsync = createAsyncThunk(
+    'todos/toogleCompleteAsync',
+    async (payload) => {
+        const response = await fetch(`http://localhost:7000/todos/${payload.id}`,{
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ completed: payload.completed })
+        });
+        if(response.ok){
+            const todo = await response.json();
+            return { id: todo.id, completed: todo.completed };
+        }
+    }
+);
+
+export const deleteTodoAsync = createAsyncThunk(
+    'todos/deleteTodoAsync',
+    async(payload) => {
+        const response = await fetch(`http://localhost:7000/todos/${payload.id}`,{
+            method: 'DELETE',
+        });
+        if(response.ok){
+            const todo = await response.json();
+            return { id: todo.id}
+        }
+    }
+);
 
 const todoSlice = createSlice({
     name: "todos",
@@ -36,6 +82,18 @@ const todoSlice = createSlice({
     extraReducers: {
         [getTodosAsync.fulfilled]: (state, action) => {
             return action.payload.todos;
+        },
+        [addTodoAsync.fulfilled]: (state, action) => {
+            state.push(action.payload.todo);
+        },
+        [toogleCompleteAsync.fulfilled]: (state, action) => {
+            const index = state.findIndex(
+                (todo) => todo.id === action.payload.id
+            );
+            state[index].completed = action.payload.completed;
+        },
+        [deleteTodoAsync.fulfilled]: (state, action) => {
+            return state.filter( (todo) => todo.id !== action.payload.id );
         }
     }
 });
